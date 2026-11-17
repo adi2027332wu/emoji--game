@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ml">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Emoji Guess Game</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px;
+    font-family:system-ui,"Noto Sans Malayalam",sans-serif;
+    background:linear-gradient(135deg,#fff1f7,#e9f4ff);color:#29243a}
+  .card{width:min(100%,520px);background:#fff;border-radius:24px;padding:26px;
+    box-shadow:0 12px 35px #40306020;text-align:center}
+  h1{margin:0 0 8px;font-size:clamp(25px,6vw,34px)}
+  .sub{color:#6c6478;margin:0 0 22px}
+  .score{display:flex;justify-content:space-between;background:#f6f2fb;
+    border-radius:14px;padding:12px 16px;margin-bottom:22px;font-weight:700}
+  .emoji{font-size:clamp(55px,15vw,82px);letter-spacing:8px;margin:12px 0 20px}
+  input{width:100%;padding:15px;border:2px solid #e4dced;border-radius:13px;
+    font-size:18px;text-align:center;outline:none}
+  input:focus{border-color:#8860c7}
+  button{border:0;border-radius:13px;padding:13px 18px;font-size:16px;
+    font-weight:700;cursor:pointer;margin:8px 4px}
+  .primary{background:#7650b8;color:#fff}
+  .secondary{background:#eee8f6;color:#49366b}
+  #message{min-height:28px;font-weight:700;margin:12px 0}
+  .small{font-size:13px;color:#81788d;margin-top:16px}
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>🎮 Emoji Guess Game</h1>
+  <p class="sub">ഇമോജി നോക്കി ഉത്തരം കണ്ടുപിടിക്കൂ!</p>
+  <div class="score"><span>⭐ പോയിന്റ്: <b id="score">0</b></span><span>ചോദ്യം: <b id="count">1</b>/<b id="total">10</b></span></div>
+  <div class="emoji" id="emoji">🍎 📱</div>
+  <p id="hint">സൂചന: ഒരു മൊബൈൽ ഫോൺ ബ്രാൻഡ്</p>
+  <input id="answer" type="text" placeholder="ഉത്തരം ഇവിടെ എഴുതൂ" autocomplete="off">
+  <div>
+    <button class="primary" id="check">ഉത്തരം പരിശോധിക്കുക</button>
+    <button class="secondary" id="next" hidden>അടുത്ത ചോദ്യം</button>
+  </div>
+  <div id="message" aria-live="polite"></div>
+  <button class="secondary" id="restart" hidden>വീണ്ടും കളിക്കാം</button>
+  <p class="small">സുഹൃത്തുക്കളോടും കളിക്കാൻ പറയൂ! 💜</p>
+</main>
+<script>
+const questions = [
+ {e:"🍎 📱", a:["apple","ഐഫോൺ","iphone","ആപ്പിൾ"], h:"ഒരു മൊബൈൽ ഫോൺ ബ്രാൻഡ്"},
+ {e:"🦁 👑", a:["lion king","ലയൺ കിംഗ്"], h:"ഒരു പ്രശസ്ത സിനിമ"},
+ {e:"🐱 🐭", a:["tom and jerry","ടോം ആൻഡ് ജെറി","ടോം ജെറി"], h:"ഒരു കാർട്ടൂൺ"},
+ {e:"☀️ 🌻", a:["സൂര്യകാന്തി","sunflower"], h:"സൂര്യനെ നോക്കി നിൽക്കുന്ന പൂവ്"},
+ {e:"🕷️ 🧑", a:["spiderman","സ്പൈഡർമാൻ","സ്പൈഡര്‍മാന്‍"], h:"ഒരു സൂപ്പർഹീറോ"},
+ {e:"🍫 🎂", a:["ചോക്ലേറ്റ് കേക്ക്","chocolate cake"], h:"ഒരു മധുര പലഹാരം"},
+ {e:"🌧️ ☂️", a:["മഴക്കുട","umbrella","കുട"], h:"മഴയിൽ ഉപയോഗിക്കുന്നത്"},
+ {e:"🐝 🍯", a:["തേൻ","honey","തേനീച്ച"], h:"തേനീച്ച ഉണ്ടാക്കുന്നത്"},
+ {e:"🚂 💨", a:["ട്രെയിൻ","train"], h:"റെയിൽവേയിൽ ഓടുന്നത്"},
+ {e:"🌙 ⭐", a:["രാത്രി","night","നിലാവുള്ള രാത്രി"], h:"ചന്ദ്രനും നക്ഷത്രങ്ങളും കാണുന്ന സമയം"}
+];
+let order=[], index=0, score=0, locked=false;
+const $=id=>document.getElementById(id);
+function shuffle(){order=[...questions.keys()].sort(()=>Math.random()-.5)}
+function show(){
+ locked=false;
+ const q=questions[order[index]];
+ $("emoji").textContent=q.e; $("hint").textContent="സൂചന: "+q.h;
+ $("answer").value=""; $("answer").disabled=false;
+ $("check").hidden=false; $("next").hidden=true;
+ $("message").textContent=""; $("count").textContent=index+1;
+ $("answer").focus();
+}
+function normalize(s){return s.toLocaleLowerCase("ml").replace(/[\s\p{P}\p{S}]/gu,"")}
+function check(){
+ if(locked)return;
+ const val=normalize($("answer").value.trim());
+ if(!val){$("message").textContent="ആദ്യം ഉത്തരം എഴുതൂ 😊";return}
+ locked=true;
+ const q=questions[order[index]];
+ const correct=q.a.some(a=>normalize(a)===val);
+ if(correct){score++;$("score").textContent=score;$("message").textContent="ശരിയുത്തരം! 🎉 +1 പോയിന്റ്";}
+ else $("message").textContent="സാരമില്ല! ശരിയുത്തരം: "+q.a[0]+" 💜";
+ $("answer").disabled=true;$("check").hidden=true;
+ if(index<questions.length-1)$("next").hidden=false;
+ else {$("message").textContent+="  ഗെയിം കഴിഞ്ഞു! 🎊";$("restart").hidden=false;}
+}
+$("check").addEventListener("click",check);
+$("answer").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
+$("next").addEventListener("click",()=>{index++;show()});
+$("restart").addEventListener("click",()=>{index=0;score=0;$("score").textContent=0;$("restart").hidden=true;shuffle();show()});
+$("total").textContent=questions.length;shuffle();show();
+</script>
+</body>
+    </html>
