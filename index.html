@@ -9,7 +9,7 @@
   body{margin:0;min-height:100vh;display:grid;place-items:center;padding:18px;
     font-family:system-ui,"Noto Sans Malayalam",sans-serif;
     background:linear-gradient(135deg,#fff1f7,#e9f4ff);color:#29243a}
-  .card{width:min(100%,520px);background:#fff;border-radius:24px;padding:26px;
+  .card{position:relative;width:min(100%,520px);background:#fff;border-radius:24px;padding:26px;
     box-shadow:0 12px 35px #40306020;text-align:center}
   h1{margin:0 0 8px;font-size:clamp(25px,6vw,34px)}
   .sub{color:#6c6478;margin:0 0 22px}
@@ -23,17 +23,53 @@
     font-weight:700;cursor:pointer;margin:8px 4px}
   .primary{background:#7650b8;color:#fff}
   .secondary{background:#eee8f6;color:#49366b}
+  #homeBtn{position:absolute;top:10px;left:10px;margin:0;padding:8px 12px;font-size:18px}
+  .hero{font-size:clamp(50px,14vw,76px);letter-spacing:6px;margin:6px 0 10px}
+  .info{list-style:none;padding:0;margin:0 0 22px;text-align:left;background:#f6f2fb;border-radius:16px;padding:14px 18px}
+  .info li{padding:6px 0;color:#49366b}
+  .play{font-size:22px;padding:16px 48px;border-radius:50px;box-shadow:0 8px 20px #7650b855}
+  .play:active{transform:scale(.96)}
+  #music{position:absolute;top:10px;right:10px;margin:0;padding:8px 12px;font-size:18px}
   #message{min-height:28px;font-weight:700;margin:12px 0}
+  #message.good{color:#1f9d55;font-size:20px}
+  #message.bad{color:#d64545}
+  .shake{animation:shake .5s}
+  @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-12px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(8px)}}
+  .pop{animation:pop .6s}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35) rotate(-6deg)}100%{transform:scale(1)}}
+  .flash-bad{animation:flashbad .6s}
+  @keyframes flashbad{0%,100%{background:#fff}30%{background:#ffe1e1}}
+  .confetti{position:fixed;top:-30px;font-size:26px;pointer-events:none;z-index:99;animation:fall 2s linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg);opacity:.8}}
   .small{font-size:13px;color:#81788d;margin-top:16px}
 </style>
 </head>
 <body>
 <main class="card">
+  <button class="secondary" id="music" title="മ്യൂസിക്">🔇</button>
+  <button class="secondary" id="homeBtn" title="ഹോം" hidden>🏠</button>
+
+  <!-- ഹോം സ്ക്രീൻ -->
+  <section id="home">
+    <div class="hero">🤔 💭 🎯</div>
+    <h1>Guess Emoji</h1>
+    <p class="sub">ഇമോജി നോക്കി ഉത്തരം കണ്ടുപിടിക്കൂ!</p>
+    <ul class="info">
+      <li>🧩 <b id="homeCount">40</b> രസകരമായ ചോദ്യങ്ങൾ</li>
+      <li>👀 രണ്ട് ഇമോജി കാണിക്കും, അത് എന്താണെന്ന് ഊഹിക്കൂ</li>
+      <li>⭐ ശരിയുത്തരത്തിന് ഓരോ പോയിന്റ്</li>
+      <li>🎵 മ്യൂസിക്കും വോയിസും കൂടെ ഉണ്ട്</li>
+    </ul>
+    <button class="primary play" id="play">▶ Play</button>
+    <p class="small">സുഹൃത്തുക്കളോടും കളിക്കാൻ പറയൂ! 💜</p>
+  </section>
+
+  <!-- ഗെയിം സ്ക്രീൻ -->
+  <div id="game" hidden>
   <h1>🎮 Emoji Guess Game</h1>
   <p class="sub">ഇമോജി നോക്കി ഉത്തരം കണ്ടുപിടിക്കൂ!</p>
-  <div class="score"><span>⭐ പോയിന്റ്: <b id="score">0</b></span><span>ചോദ്യം: <b id="count">1</b>/<b id="total">10</b></span></div>
+  <div class="score"><span>⭐ പോയിന്റ്: <b id="score">0</b></span><span>ചോദ്യം: <b id="count">1</b>/<b id="total">40</b></span></div>
   <div class="emoji" id="emoji">🍎 📱</div>
-  <p id="hint">സൂചന: ഒരു മൊബൈൽ ഫോൺ ബ്രാൻഡ്</p>
   <input id="answer" type="text" placeholder="ഉത്തരം ഇവിടെ എഴുതൂ" autocomplete="off">
   <div>
     <button class="primary" id="check">ഉത്തരം പരിശോധിക്കുക</button>
@@ -41,20 +77,52 @@
   </div>
   <div id="message" aria-live="polite"></div>
   <button class="secondary" id="restart" hidden>വീണ്ടും കളിക്കാം</button>
-  <p class="small">സുഹൃത്തുക്കളോടും കളിക്കാൻ പറയൂ! 💜</p>
+  </div>
 </main>
 <script>
 const questions = [
- {e:"🍎 📱", a:["apple","ഐഫോൺ","iphone","ആപ്പിൾ"], h:"ഒരു മൊബൈൽ ഫോൺ ബ്രാൻഡ്"},
- {e:"🦁 👑", a:["lion king","ലയൺ കിംഗ്"], h:"ഒരു പ്രശസ്ത സിനിമ"},
- {e:"🐱 🐭", a:["tom and jerry","ടോം ആൻഡ് ജെറി","ടോം ജെറി"], h:"ഒരു കാർട്ടൂൺ"},
- {e:"☀️ 🌻", a:["സൂര്യകാന്തി","sunflower"], h:"സൂര്യനെ നോക്കി നിൽക്കുന്ന പൂവ്"},
- {e:"🕷️ 🧑", a:["spiderman","സ്പൈഡർമാൻ","സ്പൈഡര്‍മാന്‍"], h:"ഒരു സൂപ്പർഹീറോ"},
- {e:"🍫 🎂", a:["ചോക്ലേറ്റ് കേക്ക്","chocolate cake"], h:"ഒരു മധുര പലഹാരം"},
- {e:"🌧️ ☂️", a:["മഴക്കുട","umbrella","കുട"], h:"മഴയിൽ ഉപയോഗിക്കുന്നത്"},
- {e:"🐝 🍯", a:["തേൻ","honey","തേനീച്ച"], h:"തേനീച്ച ഉണ്ടാക്കുന്നത്"},
- {e:"🚂 💨", a:["ട്രെയിൻ","train"], h:"റെയിൽവേയിൽ ഓടുന്നത്"},
- {e:"🌙 ⭐", a:["രാത്രി","night","നിലാവുള്ള രാത്രി"], h:"ചന്ദ്രനും നക്ഷത്രങ്ങളും കാണുന്ന സമയം"}
+ {e:"🍎 📱", a:["apple","ഐഫോൺ","iphone","ആപ്പിൾ"]},
+ {e:"🦁 👑", a:["lion king","ലയൺ കിംഗ്","the lion king"]},
+ {e:"🐱 🐭", a:["tom and jerry","ടോം ആൻഡ് ജെറി","ടോം ജെറി"]},
+ {e:"☀️ 🌻", a:["സൂര്യകാന്തി","sunflower"]},
+ {e:"🕷️ 🧑", a:["spiderman","spider man","സ്പൈഡർമാൻ","സ്പൈഡര്‍മാന്‍"]},
+ {e:"🍫 🎂", a:["ചോക്ലേറ്റ് കേക്ക്","chocolate cake"]},
+ {e:"🌧️ ☂️", a:["മഴക്കുട","umbrella","കുട"]},
+ {e:"🐝 🍯", a:["തേൻ","honey","തേനീച്ച"]},
+ {e:"🚂 💨", a:["ട്രെയിൻ","train","തീവണ്ടി"]},
+ {e:"🌙 ⭐", a:["രാത്രി","night","നിലാവുള്ള രാത്രി"]},
+
+ {e:"🦇 👨", a:["batman","ബാറ്റ്മാൻ","ബാറ്റ്മാന്‍"]},
+ {e:"❄️ 👸", a:["frozen","ഫ്രോസൺ"]},
+ {e:"🧞 🪔", a:["aladdin","അലാദ്ദീൻ","അലാവുദ്ദീൻ"]},
+ {e:"🐠 🔍", a:["finding nemo","nemo","നീമോ","ഫൈൻഡിംഗ് നീമോ"]},
+ {e:"🚢 🧊", a:["titanic","ടൈറ്റാനിക്"]},
+ {e:"🦖 🏞️", a:["jurassic park","ജുറാസിക് പാർക്ക്"]},
+ {e:"🧙 ⚡", a:["harry potter","ഹാരി പോട്ടർ"]},
+ {e:"🐒 🍌", a:["കുരങ്ങ്","കുരങ്ങൻ","monkey","വാനരൻ"]},
+ {e:"🥥 🌴", a:["തെങ്ങ്","coconut tree","തെങ്ങിൻ","തേങ്ങ"]},
+ {e:"🛶 🌊", a:["വള്ളംകളി","boat race","snake boat race"]},
+ {e:"🍌 🍟", a:["ഉപ്പേരി","banana chips","ഏത്തയ്ക്ക ഉപ്പേരി","കായ ഉപ്പേരി"]},
+ {e:"🍵 ☕", a:["ചായ","tea"]},
+ {e:"🐘 🎪", a:["പൂരം","തൃശൂർ പൂരം","thrissur pooram","pooram"]},
+ {e:"🌼 🍽️", a:["ഓണം","onam","ഓണസദ്യ","സദ്യ"]},
+ {e:"🏏 🧤", a:["ക്രിക്കറ്റ്","cricket"]},
+ {e:"⚽ 🥅", a:["ഫുട്ബോൾ","football","soccer","ഗോൾ"]},
+ {e:"🚲 🚴", a:["സൈക്കിൾ","cycle","bicycle"]},
+ {e:"✈️ 🌍", a:["വിമാനം","flight","aeroplane","airplane","plane"]},
+ {e:"🚀 🌕", a:["റോക്കറ്റ്","rocket","ചന്ദ്രയാൻ","chandrayaan"]},
+ {e:"🎒 📚", a:["സ്കൂൾ","school"]},
+ {e:"🎂 🕯️", a:["ജന്മദിനം","birthday","പിറന്നാൾ","ബർത്ത്ഡേ","happy birthday"]},
+ {e:"🌈 ☔", a:["മഴവില്ല്","rainbow"]},
+ {e:"🥭 🌳", a:["മാവ്","മാങ്ങ","mango","mango tree"]},
+ {e:"🎅 🎄", a:["ക്രിസ്മസ്","christmas"]},
+ {e:"🪔 🎆", a:["ദീപാവലി","diwali"]},
+ {e:"🐔 🥚", a:["മുട്ട","egg","കോഴിമുട്ട","കോഴി"]},
+ {e:"🐄 🥛", a:["പാൽ","milk"]},
+ {e:"💍 👰", a:["കല്യാണം","വിവാഹം","wedding","marriage"]},
+ {e:"👮 🚔", a:["പോലീസ്","police"]},
+ {e:"🎬 🍿", a:["സിനിമ","cinema","movie","film","തിയേറ്റർ"]},
+ {e:"🎤 🎵", a:["പാട്ട്","song","singing","ഗാനം","music"]}
 ];
 let order=[], index=0, score=0, locked=false;
 const $=id=>document.getElementById(id);
@@ -62,7 +130,7 @@ function shuffle(){order=[...questions.keys()].sort(()=>Math.random()-.5)}
 function show(){
  locked=false;
  const q=questions[order[index]];
- $("emoji").textContent=q.e; $("hint").textContent="സൂചന: "+q.h;
+ $("emoji").textContent=q.e;
  $("answer").value=""; $("answer").disabled=false;
  $("check").hidden=false; $("next").hidden=true;
  $("message").textContent=""; $("count").textContent=index+1;
@@ -76,17 +144,95 @@ function check(){
  locked=true;
  const q=questions[order[index]];
  const correct=q.a.some(a=>normalize(a)===val);
- if(correct){score++;$("score").textContent=score;$("message").textContent="ശരിയുത്തരം! 🎉 +1 പോയിന്റ്";}
- else $("message").textContent="സാരമില്ല! ശരിയുത്തരം: "+q.a[0]+" 💜";
+ $("message").className="";
+ if(correct){
+  score++;$("score").textContent=score;
+  const p=praise[Math.floor(Math.random()*praise.length)];
+  $("message").textContent="🎉 "+p+" +1 പോയിന്റ്";$("message").className="good";
+  celebrate(p);
+ } else {
+  $("message").textContent="സാരമില്ല! ശരിയുത്തരം: "+q.a[0]+" 💜";$("message").className="bad";
+  sadAction();
+ }
  $("answer").disabled=true;$("check").hidden=true;
- if(index<questions.length-1)$("next").hidden=false;
- else {$("message").textContent+="  ഗെയിം കഴിഞ്ഞു! 🎊";$("restart").hidden=false;}
+ if(index<questions.length-1){
+  if(correct){clearTimeout(window.adv);window.adv=setTimeout(()=>{index++;show()},2200)}   // ശരിയാണെങ്കിൽ തനിയെ അടുത്ത ചോദ്യം
+  else $("next").hidden=false;                        // തെറ്റാണെങ്കിൽ ബട്ടൺ അമർത്തണം
+ }
+ else {$("message").textContent+="  ഗെയിം കഴിഞ്ഞു! 🎊 സ്കോർ: "+score+"/"+questions.length;$("restart").hidden=false;}
 }
 $("check").addEventListener("click",check);
 $("answer").addEventListener("keydown",e=>{if(e.key==="Enter")check()});
 $("next").addEventListener("click",()=>{index++;show()});
 $("restart").addEventListener("click",()=>{index=0;score=0;$("score").textContent=0;$("restart").hidden=true;shuffle();show()});
-$("total").textContent=questions.length;shuffle();show();
-</script>
-</body>
-    </html>
+$("total").textContent=questions.length;$("homeCount").textContent=questions.length;
+
+/* ഹോം ⇄ ഗെയിം */
+function startGame(){
+ clearTimeout(window.adv);
+ index=0;score=0;$("score").textContent=0;$("restart").hidden=true;
+ shuffle();
+ $("home").hidden=true;$("game").hidden=false;$("homeBtn").hidden=false;
+ show();
+ if(!playing)startMusic();
+}
+function goHome(){
+ clearTimeout(window.adv);
+ try{speechSynthesis.cancel()}catch(e){}
+ $("game").hidden=true;$("home").hidden=false;$("homeBtn").hidden=true;
+}
+$("play").addEventListener("click",startGame);
+$("homeBtn").addEventListener("click",goHome);
+
+/* ---------- ശരി / തെറ്റ് ഇഫക്ടുകൾ ---------- */
+const praise=["അഭിനന്ദനങ്ങൾ!","കൊള്ളാം, മിടുക്കൻ!","ശരിയുത്തരം! അഭിനന്ദനങ്ങൾ!","സൂപ്പർ! അഭിനന്ദനങ്ങൾ!","പൊളിച്ചു! അഭിനന്ദനങ്ങൾ!"];
+const sadLines=["അയ്യോ, തെറ്റിപ്പോയി!","സാരമില്ല, അടുത്തത് ശരിയാക്കാം!"];
+let sfx=null;
+function tone(freq,start,dur,type="triangle",vol=0.12){
+ if(!sfx) sfx=new (window.AudioContext||window.webkitAudioContext)();
+ if(sfx.state==="suspended") sfx.resume();
+ const t=sfx.currentTime+start, o=sfx.createOscillator(), g=sfx.createGain();
+ o.type=type;o.frequency.setValueAtTime(freq,t);
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+ o.connect(g);g.connect(sfx.destination);o.start(t);o.stop(t+dur+0.05);
+}
+function speak(text){
+ try{
+  if(!("speechSynthesis" in window))return;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text);
+  u.lang="ml-IN";u.rate=1;u.pitch=1.1;
+  const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith("ml"));
+  if(v)u.voice=v;
+  speechSynthesis.speak(u);
+ }catch(e){}
+}
+function confetti(){
+ const items=["🎉","🎊","⭐","✨","💜","🌟"];
+ for(let i=0;i<30;i++){
+  const s=document.createElement("span");
+  s.className="confetti";s.textContent=items[i%items.length];
+  s.style.left=Math.random()*100+"vw";
+  s.style.animationDelay=Math.random()*.6+"s";
+  document.body.appendChild(s);
+  setTimeout(()=>s.remove(),3000);
+ }
+}
+function restartAnim(el,cls){el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls)}
+function celebrate(text){
+ tone(523.25,0,.15);tone(659.25,.12,.15);tone(783.99,.24,.15);tone(1046.5,.36,.35);
+ restartAnim($("emoji"),"pop");confetti();speak(text);
+}
+function sadAction(){
+ tone(300,0,.25,"sawtooth",.08);tone(220,.22,.4,"sawtooth",.08);
+ const card=document.querySelector(".card");
+ restartAnim(card,"shake");restartAnim(card,"flash-bad");
+ speak(sadLines[Math.floor(Math.random()*sadLines.length)]);
+}
+if("speechSynthesis" in window)speechSynthesis.getVoices();
+
+/* ---------- Background music (generated, no audio file needed) ---------- */
+let ctx=null, timer=null, playing=false, step=0;
+const melody=[523.25,587.33,659.25,783.99,659.25,587.33,523.25,392.00,
+              440.00,523.25,587.33,659.25,587.33,523.25,440.00,392.00];
+function note(fr
