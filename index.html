@@ -235,4 +235,23 @@ if("speechSynthesis" in window)speechSynthesis.getVoices();
 let ctx=null, timer=null, playing=false, step=0;
 const melody=[523.25,587.33,659.25,783.99,659.25,587.33,523.25,392.00,
               440.00,523.25,587.33,659.25,587.33,523.25,440.00,392.00];
-function note(fr
+function note(freq,t){
+ const o=ctx.createOscillator(), g=ctx.createGain();
+ o.type="sine"; o.frequency.value=freq;
+ g.gain.setValueAtTime(0,t);
+ g.gain.linearRampToValueAtTime(0.05,t+0.03);
+ g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+ o.connect(g); g.connect(ctx.destination);
+ o.start(t); o.stop(t+0.5);
+}
+function startMusic(){
+ if(!ctx) ctx=new (window.AudioContext||window.webkitAudioContext)();
+ if(ctx.state==="suspended") ctx.resume();
+ timer=setInterval(()=>{note(melody[step%melody.length],ctx.currentTime);step++},450);
+ playing=true; $("music").textContent="🔊";
+}
+function stopMusic(){clearInterval(timer);playing=false;$("music").textContent="🔇"}
+$("music").addEventListener("click",()=>playing?stopMusic():startMusic());
+</script>
+</body>
+</html>
